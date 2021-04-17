@@ -1,5 +1,6 @@
 import * as ChildProcess from 'child_process';
 import { ChildProcessWithoutNullStreams } from 'node:child_process';
+import { EnvironmentContext } from './EnvironmentContext';
 
 // threshold を超えないことを保証するものではない
 const K_THREASHOLD_OUTPUT_BYTE = 100000;
@@ -12,12 +13,19 @@ export interface CommandRunnerResult {
 }
 
 export class CommandRunner {
+  private ctx_: EnvironmentContext;
   private command_: string;
   private args_: string[];
   private stdin_: string;
   private ps_: ChildProcessWithoutNullStreams | null;
 
-  constructor(command: string, args: string[], stdin: string) {
+  constructor(
+    ctx: EnvironmentContext,
+    command: string,
+    args: string[],
+    stdin: string
+  ) {
+    this.ctx_ = ctx;
     this.command_ = command;
     this.args_ = args;
     this.stdin_ = stdin;
@@ -36,7 +44,11 @@ export class CommandRunner {
   run(): Promise<CommandRunnerResult> {
     this.ps_ = null;
     return new Promise((resolve, reject) => {
-      const ps = ChildProcess.spawn(this.command_, this.args_, { shell: true });
+      const dir = this.ctx_.getWorkspace();
+      const ps = ChildProcess.spawn(this.command_, this.args_, {
+        shell: true,
+        cwd: dir,
+      });
       ps.stdin.write(this.stdin_);
       ps.stdin.end();
 

@@ -1,10 +1,13 @@
 import { CommandRunner, CommandRunnerResult } from './CommandRunner';
+import { EnvironmentContext } from './EnvironmentContext';
 
 export class RunnerManager {
   private runners_: { [key: number]: CommandRunner };
+  private ctx_: EnvironmentContext;
 
-  constructor() {
+  constructor(ctx: EnvironmentContext) {
     this.runners_ = {};
+    this.ctx_ = ctx;
   }
 
   runNewCommand(
@@ -20,7 +23,7 @@ export class RunnerManager {
       return false;
     }
     // TODO: arguments?
-    const runner = new CommandRunner(cmd, [], stdin);
+    const runner = new CommandRunner(this.ctx_, cmd, [], stdin);
     this.runners_[id] = runner;
     runner
       .run()

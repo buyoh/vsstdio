@@ -2,12 +2,12 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
-import * as ChildProcess from 'child_process';
 import { HTMLResourceView } from './view/HTMLResourceView';
 import { ViewViewProvider } from './view/ViewViewProvider';
 import * as _FS from 'fs';
 import { CommandPanelHandler } from './lib/CommandPanelHandler';
 import { RunnerManager } from './lib/RunnerManager';
+import { EnvironmentContext } from './lib/EnvironmentContext';
 const FS = _FS.promises;
 
 // this method is called when your extension is activated
@@ -24,7 +24,7 @@ export async function activate(context: vscode.ExtensionContext) {
   ).toString();
 
   const view = new HTMLResourceView(html);
-  const rm = new RunnerManager();
+  const rm = new RunnerManager(new EnvironmentContext());
   const cp = new CommandPanelHandler(view, rm, (err, msg) => {
     vscode.window.showErrorMessage('internal error: ' + msg.toString());
     console.error(msg, err);

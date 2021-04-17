@@ -8,7 +8,7 @@ It's useful for executing commands with the same inputs as is often the case in 
 ```
 npm install -g vsce
 vsce package  # Generates a .vsix file
-code --install-extension my-extension-0.0.1.vsix
+code --install-extension vsstdio-0.0.1.vsix
 ```
 
 ## Features
