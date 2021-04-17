@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<style>
+  .h {
+    overflow: hidden;
+  }
+  .block {
+    display: block;
+  }
+  .row {
+    display: flex;
+    flex-direction: row;
+  }
+  .column {
+    display: flex;
+    flex-direction: column;
+  }
+  .flex {
+    flex: 1 1 auto;
+  }
+  .fix {
+    flex: 0 0 auto;
+  }
+  label.caption {
+    font-weight: bold;
+  }
+  textarea.editor {
+    display: block;
+    overflow: scroll;
+    margin: 0;
+    background-color: unset;
+    color: unset;
+  }
+  input {
+    padding: 0.3em;
+    background-color: unset;
+    color: unset;
+  }
+  button {
+    padding: 0.3em;
+  }
+</style>
+<body>
+  <div class="column">
+    <input type="text" class="block fix" placeholder="command" id="command">
+    <div class="fix">
+      <button id="btn-run">RUN</button><button id="btn-kill">KILL</button>
+    </div>
+  </div>
+  <div class="row h">
+    <div class="fix column h">
+      <!-- <label class="fix caption" for="stdin">stdin</label> -->
+      <textarea class="flex editor" id="stdin" rows="5" placeholder="stdin" style="resize: horizontal;"></textarea>
+    </div>
+    <div class="flex column h">
+      <!-- <label class="fix caption" for="stdout">stdout</label> -->
+      <div class="fix">code = <output id="resultcode"></output></div>
+      <textarea class="flex editor" id="stdout" rows="5" placeholder="stdout" style="resize:vertical;"></textarea>
+      <textarea class="flex editor" id="stderr" rows="5" placeholder="stderr" style="resize:vertical;"></textarea>
+    </div>
+  </div>
+
+  <script>
+    const vscode = window.acquireVsCodeApi ? window.acquireVsCodeApi() : null;
+    let cmdCount = 0;
+    function handleRun() {
+      const stdin = document.getElementById('stdin').value || '';
+      const cmd = document.getElementById('command').value || '';
+      vscode.postMessage({method: 'run', id: cmdCount, cmd, stdin});
+      cmdCount += 1;
+    }
+    function handleKill() {
+      vscode.postMessage({method: 'kill', id: cmdCount});
+    }
+
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (data.result === 'error') {
+        document.getElementById('resultcode').value = '[internal error]';
+      } else if (data.result === 'complete') {
+        document.getElementById('resultcode').value = data.code;
+        document.getElementById('stdout').value = data.stdout;
+        document.getElementById('stderr').value = data.stderr;
+      }
+    });
+    document.getElementById('command').addEventListener('keyup', (e) => {
+      if (e.keyCode == 13 && e.ctrlKey) {
+        handleRun(e);
+      }
+    })
+    document.getElementById('btn-run').addEventListener('click', handleRun);
+    document.getElementById('btn-kill').addEventListener('click', handleKill);
+    
+  </script>
+</body>
+</html>
