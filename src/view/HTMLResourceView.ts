@@ -22,6 +22,8 @@ export class HTMLResourceView implements ViewInterface {
     webview: vscode.Webview,
     postMessageHandler: (message: any) => Thenable<boolean>
   ): void {
+    // https://code.visualstudio.com/api/extension-guides/webview#getstate-and-setstate
+    // retainContextWhenHidden?
     webview.html = this.html_;
     webview.onDidReceiveMessage((a) => {
       this.receiveMessageHandler_?.(a);

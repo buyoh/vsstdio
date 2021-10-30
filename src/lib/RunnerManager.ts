@@ -2,40 +2,40 @@ import { CommandRunner, CommandRunnerResult } from './CommandRunner';
 import { EnvironmentContext } from './EnvironmentContext';
 
 export class RunnerManager {
+  private idGenerator_: number;
   private runners_: { [key: number]: CommandRunner };
   private ctx_: EnvironmentContext;
 
   constructor(ctx: EnvironmentContext) {
+    this.idGenerator_ = 0;
     this.runners_ = {};
     this.ctx_ = ctx;
   }
 
   runNewCommand(
-    id: number,
     cmd: string,
     stdin: string,
-    callback: (err: any, id: number, res: CommandRunnerResult | null) => void
-  ): boolean {
+    callback: (err: any, res: CommandRunnerResult | null) => void
+  ): number | null {
     if (cmd === '') {
-      return false;
+      return null;
     }
-    if (this.runners_[id]) {
-      return false;
-    }
+    this.idGenerator_ += 1;
+    const id = this.idGenerator_;
     // TODO: arguments?
     const runner = new CommandRunner(this.ctx_, cmd, [], stdin);
     this.runners_[id] = runner;
     runner
       .run()
       .then((res) => {
-        callback(null, id, res);
+        callback(null, res);
         delete this.runners_[id];
       })
       .catch((e) => {
-        callback(e, id, null);
+        callback(e, null);
         delete this.runners_[id];
       });
-    return true;
+    return id;
   }
 
   killCommand(id: number) {
