@@ -1,8 +1,3 @@
-export interface ViewInterface {
-  onReceiveMessage(handler: (a: any) => void): void;
-  postMessage(a: any): void;
-}
-
 export interface CommandQueryRun {
   method: 'run';
   id: number;

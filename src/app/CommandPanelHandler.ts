@@ -1,11 +1,11 @@
-import { RunnerManager } from './RunnerManager';
+import { RunnerManager } from '../lib/RunnerManager';
 import {
   CommandQuery,
   CommandQueryKill,
   CommandQueryRun,
   CommandResponce,
-  ViewInterface,
-} from './Types';
+} from './Command';
+import { ViewInterface } from './ViewInterface';
 
 type ErrorHandler = (err: any, message: string) => void;
 

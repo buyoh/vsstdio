@@ -5,9 +5,9 @@ import * as vscode from 'vscode';
 import { HTMLResourceView } from './view/HTMLResourceView';
 import { ViewViewProvider } from './view/ViewViewProvider';
 import * as _FS from 'fs';
-import { CommandPanelHandler } from './lib/CommandPanelHandler';
 import { RunnerManager } from './lib/RunnerManager';
 import { EnvironmentContext } from './lib/EnvironmentContext';
+import { CommandPanelHandler } from './app/CommandPanelHandler';
 const FS = _FS.promises;
 
 // this method is called when your extension is activated

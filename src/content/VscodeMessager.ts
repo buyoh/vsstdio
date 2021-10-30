@@ -18,12 +18,12 @@ export namespace VscodeMessager {
     return gVscode;
   }
 
-  export function postMessage(o: object) {
+  export function postMessage(o: any) {
     const vscode = getVscode();
     vscode.postMessage(o);
   }
 
-  export function addMessageListener(cb: (o: object) => void) {
+  export function addMessageListener(cb: (o: any) => void) {
     window.addEventListener('message', (event) => {
       cb(event.data);
     });

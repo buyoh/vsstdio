@@ -1,3 +1,4 @@
+import { CommandQuery, CommandResponce } from '../app/Command';
 import { DocumentElement } from './DocumentElement';
 import { VscodeMessager } from './VscodeMessager';
 
@@ -10,18 +11,24 @@ function handleRun() {
     return;
   }
   cmdCount += 1;
-  VscodeMessager.postMessage({ method: 'run', id: cmdCount, cmd, stdin });
+  const msg: CommandQuery = { method: 'run', id: cmdCount, cmd, stdin };
+  VscodeMessager.postMessage(msg);
 }
 
 function handleKill() {
-  VscodeMessager.postMessage({ method: 'kill', id: cmdCount });
+  const msg: CommandQuery = { method: 'kill', id: cmdCount };
+  VscodeMessager.postMessage(msg);
 }
 
-function onReceiveMessage(data: any) {
+function onReceiveMessage(data: CommandResponce) {
   if (data.result === 'error') {
     DocumentElement.setTestResultValue('[internal error]', '', '');
   } else if (data.result === 'complete') {
-    DocumentElement.setTestResultValue(data.code, data.stdout, data.stderr);
+    DocumentElement.setTestResultValue(
+      data.code as any,
+      data.stdout,
+      data.stderr
+    );
   }
 }
 

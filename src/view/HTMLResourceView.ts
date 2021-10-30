@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ViewInterface } from '../lib/Types';
+import { ViewInterface } from '../app/ViewInterface';
 
 export class HTMLResourceView implements ViewInterface {
   private html_: string = '';
