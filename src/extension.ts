@@ -17,11 +17,20 @@ export async function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   console.log('Congratulations, your extension "vsstdio" is now active!');
 
-  const html = (
+  const htmlOriginal = (
     await FS.readFile(
       context.asAbsolutePath('./resources/html/command_panel_view.html')
     )
   ).toString();
+
+  const js = (
+    await FS.readFile(context.asAbsolutePath('./dist/content.js'))
+  ).toString();
+
+  const html = htmlOriginal.replace(
+    '<script src="content.js"></script>',
+    `<script>\n${js}\n</script>`
+  );
 
   const view = new HTMLResourceView(html);
   const rm = new RunnerManager(new EnvironmentContext());

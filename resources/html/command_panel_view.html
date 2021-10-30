@@ -21,10 +21,14 @@
   .fix {
     flex: 0 0 auto;
   }
+  .pairgrid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+  }
   label.caption {
     font-weight: bold;
   }
-  textarea.editor {
+  textarea {
     display: block;
     overflow: scroll;
     margin: 0;
@@ -38,59 +42,68 @@
   }
   button {
     padding: 0.3em;
+    border-width: 2px;
+    border-style: solid;
+    background-color: #38d;
+    color: #eee
+  }
+  button:hover {
+    background-color: #7af;
+  }
+  button.warn {
+    background-color: #d83;
+  }
+  button.warn:hover {
+    background-color: #ea7;
+  }
+  .list {
+    display: flex;
+    flex-direction: row;
+    margin: 0 -5px;
+  }
+  .list > * {
+    margin: 0 5px;
+    flex: 0 0 auto;
   }
 </style>
 <body>
+  <h3>command</h3>
+  <p>
+  <div class="pairgrid">
+    <div>BUILD</div><input type="text" class="block fix" placeholder="command" id="build-command">
+    <div>TEST</div><input type="text" class="block fix" placeholder="command" id="test-command">
+  </div>
+</p>
+<p>
+  <div class="list">
+    <button id="btn-run-build-test">RUN BUILD+TEST</button><button id="btn-run-test">RUN TEST</button><button id="btn-kill" class="warn">KILL</button>
+  </div>
+</p>
+  <h3>BUILD result</h3>
+  <div>
+    <div class="fix">code = <output id="build-resultcode"></output></div>
+    <div class="flex row h">
+      <textarea class="flex editor" id="build-stdout" rows="5" placeholder="stdout" style="resize:vertical;"></textarea>
+      <textarea class="flex editor" id="build-stderr" rows="5" placeholder="stderr" style="resize:vertical;"></textarea>
+    </div>
+  </div>
+  <h3>TEST result</h3>
   <div class="column">
-    <input type="text" class="block fix" placeholder="command" id="command">
-    <div class="fix">
-      <button id="btn-run">RUN</button><button id="btn-kill">KILL</button>
+    <!-- <div class="fix">collapse</div> -->
+    <div class="fix">code = <output id="resultcode"></output></div>
+    <div class="row h">
+      <div class="fix column h">
+        <textarea class="flex editor" id="stdin" rows="5" placeholder="stdin" style="resize: horizontal;"></textarea>
+      </div>
+      <div class="flex row h">
+        <textarea class="flex editor" id="stdout" rows="5" placeholder="stdout" style="resize:vertical;"></textarea>
+        <textarea class="flex editor" id="stderr" rows="5" placeholder="stderr" style="resize:vertical;"></textarea>
+      </div>
     </div>
   </div>
-  <div class="row h">
-    <div class="fix column h">
-      <!-- <label class="fix caption" for="stdin">stdin</label> -->
-      <textarea class="flex editor" id="stdin" rows="5" placeholder="stdin" style="resize: horizontal;"></textarea>
-    </div>
-    <div class="flex column h">
-      <!-- <label class="fix caption" for="stdout">stdout</label> -->
-      <div class="fix">code = <output id="resultcode"></output></div>
-      <textarea class="flex editor" id="stdout" rows="5" placeholder="stdout" style="resize:vertical;"></textarea>
-      <textarea class="flex editor" id="stderr" rows="5" placeholder="stderr" style="resize:vertical;"></textarea>
-    </div>
-  </div>
+  
+  <div style="height: 80vh"></div>
 
-  <script>
-    const vscode = window.acquireVsCodeApi ? window.acquireVsCodeApi() : null;
-    let cmdCount = 0;
-    function handleRun() {
-      const stdin = document.getElementById('stdin').value || '';
-      const cmd = document.getElementById('command').value || '';
-      vscode.postMessage({method: 'run', id: cmdCount, cmd, stdin});
-      cmdCount += 1;
-    }
-    function handleKill() {
-      vscode.postMessage({method: 'kill', id: cmdCount});
-    }
-
-    window.addEventListener('message', (event) => {
-      const data = event.data;
-      if (data.result === 'error') {
-        document.getElementById('resultcode').value = '[internal error]';
-      } else if (data.result === 'complete') {
-        document.getElementById('resultcode').value = data.code;
-        document.getElementById('stdout').value = data.stdout;
-        document.getElementById('stderr').value = data.stderr;
-      }
-    });
-    document.getElementById('command').addEventListener('keyup', (e) => {
-      if (e.keyCode == 13 && e.ctrlKey) {
-        handleRun(e);
-      }
-    })
-    document.getElementById('btn-run').addEventListener('click', handleRun);
-    document.getElementById('btn-kill').addEventListener('click', handleKill);
-    
-  </script>
+  <script src="content.js"></script>
 </body>
 </html>
