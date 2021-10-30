@@ -51,6 +51,23 @@ function onReceiveMessage(data: CommandResponce) {
 }
 
 DocumentElement.start(() => {
+  DocumentElement.enableRetainValue(
+    (id, val) => {
+      let state = VscodeMessager.getState();
+      if (!state) {
+        state = {};
+      }
+      state[`store-dom-${id}`] = val;
+      VscodeMessager.setState(state);
+    },
+    (id) => {
+      let state = VscodeMessager.getState();
+      if (!state) {
+        return '';
+      }
+      return state[`store-dom-${id}`] || '';
+    }
+  );
   DocumentElement.setButtonEventHandler({
     runBuildTest: handleRunBuildTests,
     runTest: handleRunTests,

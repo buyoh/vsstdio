@@ -59,6 +59,23 @@ export namespace DocumentElement {
     ecode.value = code;
   }
 
+  export function enableRetainValue(
+    store: (id: string, val: string) => void,
+    load: (id: string) => string
+  ): void {
+    const ids = ['build-command', 'test-command'];
+    for (const id of ids) {
+      const dom = document.getElementById(id) as HTMLInputElement;
+      if (!dom) {
+        continue;
+      }
+      dom.value = load(id);
+      dom.addEventListener('change', () => {
+        store(id, dom.value);
+      });
+    }
+  }
+
   export function start(cb: Function) {
     document.addEventListener('DOMContentLoaded', () => {
       prepare();

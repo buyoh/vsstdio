@@ -28,4 +28,14 @@ export namespace VscodeMessager {
       cb(event.data);
     });
   }
+
+  export function getState(): any {
+    const vscode = getVscode();
+    return vscode.getState();
+  }
+
+  export function setState(a: any) {
+    const vscode = getVscode();
+    vscode.setState(a);
+  }
 }
