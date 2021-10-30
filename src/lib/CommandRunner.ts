@@ -96,8 +96,8 @@ export class CommandRunner {
         checkTermination();
       });
       ps.on('close', (code, signal) => {
-        endcode = code;
-        endsignal = signal;
+        endcode = code || -1; // TODO
+        endsignal = signal?.toString() || 'null';
         endflg |= 4;
         checkTermination();
       });
