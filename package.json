@@ -2,10 +2,16 @@
   "name": "vsstdio",
   "displayName": "shell runner with stdio",
   "description": "",
-  "version": "0.0.1",
+  "icon": "resources/priv/icon.png",
+  "version": "0.1.0",
+  "preview": true,
+  "repository": {
+    "type": "git", 
+    "url": "https://github.com/buyoh/vsstdio.git"
+  },
   "publisher": "buyoh",
   "engines": {
-    "vscode": "^1.55.0"
+    "vscode": "^1.61.0"
   },
   "categories": [
     "Other"
