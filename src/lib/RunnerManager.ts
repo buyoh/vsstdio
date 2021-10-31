@@ -3,7 +3,7 @@ import { EnvironmentContext } from './EnvironmentContext';
 
 export class RunnerManager {
   private idGenerator_: number;
-  private runners_: { [key: number]: CommandRunner };
+  private runners_: { [key: string]: CommandRunner };
   private ctx_: EnvironmentContext;
 
   constructor(ctx: EnvironmentContext) {

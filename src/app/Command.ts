@@ -1,32 +1,32 @@
 export interface CommandQueryRun {
   method: 'run';
-  id: number;
+  id: string;
   // cmd: string;
   // stdin: string;
   build: {
     cmd: string;
-  };
-  tests: Array<{ cmd: string; stdin: string }>;
+  } | null;
+  tests: Array<{ testId: string; cmd: string; stdin: string }>;
 }
 
 export interface CommandQueryKill {
   method: 'kill';
-  id: number;
+  id: string;
 }
 
 export type CommandQuery = CommandQueryRun | CommandQueryKill;
 
 export interface CommandResponceError {
   result: 'error';
-  id: number;
+  id: string;
   detail: string;
 }
 
 export interface CommandResponceComplete {
   result: 'complete';
-  id: number;
+  id: string;
   phase: 'build' | 'tests';
-  testIndex: number;
+  testId: string;
   stdout: string;
   stderr: string;
   code: number;

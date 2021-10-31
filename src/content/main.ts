@@ -2,37 +2,69 @@ import { CommandQuery, CommandResponce } from '../app/Command';
 import { DocumentElement } from './DocumentElement';
 import { VscodeMessager } from './VscodeMessager';
 
-let queryCount = 0;
+let gQueryCount = 0;
+
+function provideNewTestId() {
+  gQueryCount += 1;
+  return '' + gQueryCount;
+}
+
+let gCurrentTestId = 'none';
 
 function handleRunBuildTests() {
-  const testStdin = DocumentElement.getTestStdinValue();
+  const testStdins = DocumentElement.getAllTestStdinValue();
   const buildCmd = DocumentElement.getCommandValue('build');
   const testCmd = DocumentElement.getCommandValue('test');
   if (buildCmd === '' || testCmd === '') {
     return;
   }
-  queryCount += 1;
+  const id = provideNewTestId();
+  gCurrentTestId = id;
   const msg: CommandQuery = {
     method: 'run',
-    id: queryCount,
+    id,
     build: { cmd: buildCmd },
-    tests: [{ cmd: testCmd, stdin: testStdin }],
+    tests: Object.entries(testStdins).map((kv) => ({
+      testId: kv[0],
+      cmd: testCmd,
+      stdin: kv[1],
+    })),
   };
   VscodeMessager.postMessage(msg);
 }
 
 function handleRunTests() {
-  // TODO!
+  const testStdins = DocumentElement.getAllTestStdinValue();
+  const testCmd = DocumentElement.getCommandValue('test');
+  if (testCmd === '') {
+    return;
+  }
+  const id = provideNewTestId();
+  gCurrentTestId = id;
+  const msg: CommandQuery = {
+    method: 'run',
+    id,
+    build: null,
+    tests: Object.entries(testStdins).map((kv) => ({
+      testId: kv[0],
+      cmd: testCmd,
+      stdin: kv[1],
+    })),
+  };
+  console.log(msg);
+  VscodeMessager.postMessage(msg);
 }
 
 function handleKill() {
-  const msg: CommandQuery = { method: 'kill', id: queryCount };
+  const msg: CommandQuery = { method: 'kill', id: gCurrentTestId };
   VscodeMessager.postMessage(msg);
 }
 
 function onReceiveMessage(data: CommandResponce) {
   if (data.result === 'error') {
-    DocumentElement.setTestResultValue('[internal error]', '', '');
+    // note: If i want to display an error to dialog, the error should be
+    // sent to vscode side, but the error is came from vscode side...
+    console.error('receive internal error', data.detail);
   } else if (data.result === 'complete') {
     if (data.phase === 'build') {
       DocumentElement.setBuildResultValue(
@@ -42,6 +74,7 @@ function onReceiveMessage(data: CommandResponce) {
       );
     } else if (data.phase === 'tests') {
       DocumentElement.setTestResultValue(
+        data.testId,
         data.code as any,
         data.stdout,
         data.stderr

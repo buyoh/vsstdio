@@ -6,7 +6,10 @@ export namespace DocumentElement {
   }
 
   function prepare() {
-    //
+    addTestDom();
+    document
+      .getElementById('btn-add-test')
+      ?.addEventListener('click', () => addTestDom());
   }
 
   export function setButtonEventHandler(handlers: ButtonEventHandler): void {
@@ -41,22 +44,110 @@ export namespace DocumentElement {
     ecode.value = code;
   }
 
-  export function getTestStdinValue(): string {
-    const e = document.getElementById('stdin') as HTMLTextAreaElement; // force unwrap null
-    return e.value || '';
+  export function getAllTestStdinValue(): { [testId: string]: string } {
+    return Object.fromEntries(
+      Object.entries(getAllTestDom()).map((kv) => [
+        kv[0],
+        kv[1].stdin.value || '',
+      ])
+    );
   }
 
   export function setTestResultValue(
+    testId: string,
     code: string,
     out: string,
     err: string
   ): void {
-    const eout = document.getElementById('stdout') as HTMLTextAreaElement; // force unwrap null
-    const eerr = document.getElementById('stderr') as HTMLTextAreaElement; // force unwrap null
-    const ecode = document.getElementById('resultcode') as HTMLOutputElement; // force unwrap null
-    eout.value = out;
-    eerr.value = err;
-    ecode.value = code;
+    // ignore overhead?
+    const dom = getAllTestDom()[testId];
+    if (!dom) {
+      return;
+    }
+    dom.resultcode.value = code;
+    dom.stdout.value = out;
+    dom.stderr.value = err;
+  }
+
+  export function addTestDom() {
+    const listDom = document.getElementById('tests');
+    const tmplblock = document.getElementById(
+      'tmpl-test'
+    ) as HTMLTemplateElement | null;
+    if (!listDom || !tmplblock) {
+      console.error('addTestDom: internal error');
+      return;
+    }
+    const tmpl = document.importNode(tmplblock.content, true);
+
+    const testId = listDom.dataset.nextTestId
+      ? parseInt(listDom.dataset.nextTestId)
+      : 0;
+    listDom.dataset.nextTestId = '' + (testId + 1);
+
+    const node = tmpl.cloneNode(true) as DocumentFragment;
+    const dataElem = node.querySelector('._testElem') as HTMLElement | null;
+    if (!dataElem) {
+      console.error('addTestDom: internal error');
+      return;
+    }
+    dataElem.dataset.testId = '' + testId;
+    // appendChild は追加した Node を返す。
+    // ただし、DocumentFragment を指定すると空の DocumentFragment が返る。
+    // DocumentFragment からデータを取り出して Node に追加するので、
+    // 指定した、DocumentFragment は空になる。appendChild は、
+    // 指定された引数をただ返しているだけのように見える。
+    // 追加した Node が欲しい場合は、以下のように dom から取得しなければならない。
+    listDom.appendChild(node);
+    const appendedElem = listDom.children.item(
+      listDom.children.length - 1
+    ) as Element;
+    appendedElem.querySelector('._btnRemove')?.addEventListener('click', () => {
+      appendedElem.remove();
+    });
+  }
+
+  function getTestDomFromElem(elem: HTMLElement) {
+    // force unwrap null
+    const stdin = elem.querySelector('._stdin') as HTMLTextAreaElement;
+    const stdout = elem.querySelector('._stdout') as HTMLTextAreaElement;
+    const stderr = document.querySelector('._stderr') as HTMLTextAreaElement;
+    const resultcode = document.querySelector(
+      '._resultcode'
+    ) as HTMLOutputElement;
+    return {
+      stdin,
+      stdout,
+      stderr,
+      resultcode,
+    };
+  }
+
+  // function getTestDom(testId: number) {
+  //   const elem = document.querySelector(
+  //     `#tests > ._testElem[data-testId='${testId}']`
+  //   );
+  //   return elem ? getTestDomFromElem(elem as HTMLElement) : null;
+  // }
+
+  function getAllTestDom() {
+    const listDom = document.querySelectorAll('#tests ._testElem');
+    const table = {} as {
+      [key: string]: {
+        stdin: HTMLTextAreaElement;
+        stdout: HTMLTextAreaElement;
+        stderr: HTMLTextAreaElement;
+        resultcode: HTMLOutputElement;
+      };
+    };
+    listDom.forEach((elem) => {
+      const testId = (elem as HTMLElement).dataset.testId;
+      if (testId === undefined) {
+        return;
+      }
+      table[testId] = getTestDomFromElem(elem as HTMLElement);
+    });
+    return table;
   }
 
   export function enableRetainValue(

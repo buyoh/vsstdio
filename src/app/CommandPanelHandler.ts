@@ -60,32 +60,36 @@ class Task {
 
   async start(): Promise<boolean> {
     this.killed_ = false;
-    const resBuild = await this.runCommand(this.query_.build.cmd, '');
-    this.sendResultHandler_({
-      result: 'complete',
-      id: this.query_.id,
-      phase: 'build',
-      testIndex: -1,
-      stdout: resBuild.stdout,
-      stderr: resBuild.stderr,
-      code: resBuild.code,
-    });
-    if (resBuild.code !== 0) {
-      return false; // quit
+    const buildQuery = this.query_.build;
+    if (buildQuery) {
+      const resBuild = await this.runCommand(buildQuery.cmd, '');
+      this.sendResultHandler_({
+        result: 'complete',
+        id: this.query_.id,
+        phase: 'build',
+        testId: '-1',
+        stdout: resBuild.stdout,
+        stderr: resBuild.stderr,
+        code: resBuild.code,
+      });
+      if (resBuild.code !== 0) {
+        return false; // quit
+      }
     }
-    let index = 0; // hetakuso
     for (const test of this.query_.tests) {
+      if (this.killed_) {
+        break;
+      }
       const resBuild = await this.runCommand(test.cmd, test.stdin);
       this.sendResultHandler_({
         result: 'complete',
         id: this.query_.id,
         phase: 'tests',
-        testIndex: index,
+        testId: test.testId,
         stdout: resBuild.stdout,
         stderr: resBuild.stderr,
         code: resBuild.code,
       });
-      index += 1;
     }
     return true;
   }
