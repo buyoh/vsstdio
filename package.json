@@ -3,15 +3,15 @@
   "displayName": "shell runner with stdio",
   "description": "",
   "icon": "resources/priv/icon.png",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "preview": true,
   "repository": {
-    "type": "git", 
+    "type": "git",
     "url": "https://github.com/buyoh/vsstdio.git"
   },
   "publisher": "buyoh",
   "engines": {
-    "vscode": "^1.61.0"
+    "vscode": "^1.88.0"
   },
   "categories": [
     "Other"
@@ -22,7 +22,7 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [  ],
+    "commands": [],
     "viewsContainers": {
       "panel": [
         {
@@ -54,18 +54,18 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.61.0",
     "@types/glob": "^7.2.0",
-    "@types/mocha": "^9.0.0",
-    "@types/node": "^16.11.6",
-    "eslint": "^8.1.0",
-    "@typescript-eslint/eslint-plugin": "^5.2.0",
-    "@typescript-eslint/parser": "^5.2.0",
-    "glob": "^7.2.0",
-    "mocha": "^9.1.3",
-    "typescript": "^4.4.4",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^16.18.96",
+    "@types/vscode": "^1.88.0",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "eslint": "^8.57.0",
+    "glob": "^7.2.3",
+    "mocha": "^9.2.2",
+    "ts-loader": "^9.5.1",
+    "typescript": "^4.9.5",
     "vscode-test": "^1.6.1",
-    "ts-loader": "^9.2.6",
     "webpack": "^5.61.0",
     "webpack-cli": "^4.9.1"
   }
