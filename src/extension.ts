@@ -7,7 +7,7 @@ import { ViewViewProvider } from './view/ViewViewProvider';
 import * as _FS from 'fs';
 import { RunnerManager } from './lib/RunnerManager';
 import { EnvironmentContext } from './lib/EnvironmentContext';
-import { CommandPanelHandler } from './app/CommandPanelHandler';
+import { BackendService } from './app/BackendService';
 const FS = _FS.promises;
 
 // this method is called when your extension is activated
@@ -34,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const view = new HTMLResourceView(html);
   const rm = new RunnerManager(new EnvironmentContext());
-  const cp = new CommandPanelHandler(view, rm, (err, msg) => {
+  const cp = new BackendService(view, rm, (err, msg) => {
     vscode.window.showErrorMessage('internal error: ' + msg.toString());
     console.error(msg, err);
   });

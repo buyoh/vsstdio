@@ -104,7 +104,7 @@ class Task {
 
 type ErrorHandler = (err: any, message: string) => void;
 
-export class CommandPanelHandler {
+export class BackendService {
   private view_: ViewInterface;
   private runnerManager_: RunnerManager;
   private internalErrorHandler_: ErrorHandler;
