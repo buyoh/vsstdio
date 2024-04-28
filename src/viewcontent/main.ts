@@ -1,4 +1,4 @@
-import { CommandQuery, CommandResponce } from '../app/Command';
+import { CommandQuery, CommandResponce } from '../common/Command';
 import { DocumentElement } from './DocumentElement';
 import { VscodeMessager } from './VscodeMessager';
 

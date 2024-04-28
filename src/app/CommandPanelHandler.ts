@@ -4,8 +4,8 @@ import {
   CommandQueryKill,
   CommandQueryRun,
   CommandResponce,
-} from './Command';
-import { ViewInterface } from './ViewInterface';
+} from '../common/Command';
+import { ViewInterface } from '../common/ViewInterface';
 
 class Task {
   private query_: CommandQueryRun;

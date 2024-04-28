@@ -43,7 +43,7 @@ const config = {
 const contentScriptConfig = {
   target: 'web',
   mode: 'none',
-  entry: './src/content/main.ts',
+  entry: './src/viewcontent/main.ts',
   output: {
     // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
     path: path.resolve(__dirname, 'dist'),
