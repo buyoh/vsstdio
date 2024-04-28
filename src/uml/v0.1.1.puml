@@ -1,0 +1,41 @@
+@startuml
+
+frame app {
+  ' rectangle Commands
+  rectangle CommandPanelHandler
+  rectangle ViewInterface
+}
+' HTML
+' frame content {
+'   rectangle DocumentElement
+'   rectangle VscodeMessager
+'   control main
+' }
+frame lib {
+  rectangle CommandRunner
+  rectangle EnvironmentContext
+  rectangle RunnerManager
+}
+frame view {
+  rectangle HTMLResourceView
+  rectangle ViewViewProvider
+}
+
+control extension
+
+EnvironmentContext ..down..> vscode.workspace
+RunnerManager -down-> CommandRunner
+RunnerManager -down-> EnvironmentContext
+CommandRunner -down-> EnvironmentContext
+CommandRunner ..down..> child_process
+
+ViewViewProvider -up-|> WebviewViewProvider
+ViewViewProvider -down-> HTMLResourceView
+HTMLResourceView -up-|> ViewInterface
+
+CommandPanelHandler -down-> RunnerManager
+CommandPanelHandler -down-> ViewInterface
+
+extension -down-> CommandPanelHandler
+
+@enduml
