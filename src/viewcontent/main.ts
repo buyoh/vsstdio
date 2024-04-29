@@ -6,112 +6,30 @@ import {
 import { DocumentElement } from './DocumentElement';
 import { VscodeMessager } from './VscodeMessager';
 
-let gQueryCount = 0;
+// ------------------------------------
 
-const gAqt = new ApplicationQueryTransmitter((json) =>
-  VscodeMessager.postMessage(json)
-);
+class IdGenerator {
+  private count: number;
 
-function provideNewTestId() {
-  gQueryCount += 1;
-  return '' + gQueryCount;
-}
-
-let gCurrentTestId = 'none';
-
-function handleRunBuildTests() {
-  const testStdins = DocumentElement.getAllTestStdinValue();
-  const buildCmd = DocumentElement.getCommandValue('build');
-  const testCmd = DocumentElement.getCommandValue('test');
-  if (buildCmd === '' || testCmd === '') {
-    return;
+  constructor() {
+    this.count = 0;
   }
-  const id = provideNewTestId();
-  gCurrentTestId = id;
-  gAqt.run(
-    id,
-    { cmd: buildCmd },
-    Object.entries(testStdins).map((kv) => ({
-      testId: kv[0],
-      cmd: testCmd,
-      stdin: kv[1],
-    }))
-  );
-}
 
-function handleRunTests() {
-  const testStdins = DocumentElement.getAllTestStdinValue();
-  const testCmd = DocumentElement.getCommandValue('test');
-  if (testCmd === '') {
-    return;
-  }
-  const id = provideNewTestId();
-  gCurrentTestId = id;
-  gAqt.run(
-    id,
-    null,
-    Object.entries(testStdins).map((kv) => ({
-      testId: kv[0],
-      cmd: testCmd,
-      stdin: kv[1],
-    }))
-  );
-}
-
-function handleKill() {
-  gAqt.kill(gCurrentTestId);
-}
-
-function handleOnError(id: string, detail: string) {
-  // note: If i want to display an error to dialog, the error should be
-  // sent to vscode side, but the error is came from vscode side...
-  console.error('receive internal error', detail);
-}
-
-function handleOnComplete(
-  id: string,
-  phase: 'build' | 'tests',
-  testId: string,
-  stdout: string,
-  stderr: string,
-  code: number
-) {
-  if (phase === 'build') {
-    DocumentElement.setBuildResultValue('' + code, stdout, stderr);
-  } else if (phase === 'tests') {
-    DocumentElement.setTestResultValue(testId, '' + code, stdout, stderr);
+  next(): string {
+    this.count += 1;
+    return '' + this.count;
   }
 }
 
-// TODO: Refactoring?
-class ApplicationResponceStub implements ApplicationResponce {
-  errorFunc: (id: string, detail: string) => void;
-  completeFunc: (
-    id: string,
-    phase: 'build' | 'tests',
-    testId: string,
-    stdout: string,
-    stderr: string,
-    code: number
-  ) => void;
+class ApplicationResponceWrapper implements ApplicationResponce {
+  main: ViewContentMain;
 
-  constructor(
-    errorFunc: (id: string, detail: string) => void,
-    completeFunc: (
-      id: string,
-      phase: 'build' | 'tests',
-      testId: string,
-      stdout: string,
-      stderr: string,
-      code: number
-    ) => void
-  ) {
-    this.errorFunc = errorFunc;
-    this.completeFunc = completeFunc;
+  constructor(    main: ViewContentMain  ) {
+    this.main = main;
   }
 
   error(id: string, detail: string): void {
-    this.errorFunc(id, detail);
+    this.main.handleOnError(id, detail);
   }
 
   complete(
@@ -122,9 +40,96 @@ class ApplicationResponceStub implements ApplicationResponce {
     stderr: string,
     code: number
   ): void {
-    this.completeFunc(id, phase, testId, stdout, stderr, code);
+    this.main.handleOnComplete(id, phase, testId, stdout, stderr, code);
   }
 }
+
+// ------------------------------------
+
+class ViewContentMain {
+  testIdGenerator: IdGenerator;
+  aqt: ApplicationQueryTransmitter;
+  currentTestId: string;
+
+  constructor() {
+    this.testIdGenerator = new IdGenerator();
+    this.aqt = new ApplicationQueryTransmitter((json) =>
+      VscodeMessager.postMessage(json)
+    );
+    this.currentTestId = 'none';
+  }
+
+  // Button events
+  handleRunBuildTests() {
+    const testStdins = DocumentElement.getAllTestStdinValue();
+    const buildCmd = DocumentElement.getCommandValue('build');
+    const testCmd = DocumentElement.getCommandValue('test');
+    if (buildCmd === '' || testCmd === '') {
+      return;
+    }
+    const id = this.testIdGenerator.next();
+    this.currentTestId = id;
+    this.aqt.run(
+      id,
+      { cmd: buildCmd },
+      Object.entries(testStdins).map((kv) => ({
+        testId: kv[0],
+        cmd: testCmd,
+        stdin: kv[1],
+      }))
+    );
+  }
+  
+  // Button events
+  handleRunTests() {
+    const testStdins = DocumentElement.getAllTestStdinValue();
+    const testCmd = DocumentElement.getCommandValue('test');
+    if (testCmd === '') {
+      return;
+    }
+    const id = this.testIdGenerator.next();
+    this.currentTestId = id;
+    this.aqt.run(
+      id,
+      null,
+      Object.entries(testStdins).map((kv) => ({
+        testId: kv[0],
+        cmd: testCmd,
+        stdin: kv[1],
+      }))
+    );
+  }
+  
+  // Button events
+  handleKill() {
+    this.aqt.kill(this.currentTestId);
+  }
+  
+  // Responce from backend
+  handleOnError(id: string, detail: string) {
+    // note: If i want to display an error to dialog, the error should be
+    // sent to vscode side, but the error is came from vscode side...
+    console.error('receive internal error', detail);
+  }
+  
+  // Responce from backend
+  handleOnComplete(
+    id: string,
+    phase: 'build' | 'tests',
+    testId: string,
+    stdout: string,
+    stderr: string,
+    code: number
+  ) {
+    if (phase === 'build') {
+      DocumentElement.setBuildResultValue('' + code, stdout, stderr);
+    } else if (phase === 'tests') {
+      DocumentElement.setTestResultValue(testId, '' + code, stdout, stderr);
+    }
+  }
+}
+
+// ------------------------------------
 
 DocumentElement.start(() => {
   DocumentElement.enableRetainValue(
@@ -144,21 +149,15 @@ DocumentElement.start(() => {
       return state[`store-dom-${id}`] || '';
     }
   );
+
+  const main = new ViewContentMain();
+
   DocumentElement.setButtonEventHandler({
-    runBuildTest: handleRunBuildTests,
-    runTest: handleRunTests,
-    kill: handleKill,
+    runBuildTest: main.handleRunBuildTests.bind(main),
+    runTest: main.handleRunTests.bind(main),
+    kill: main.handleKill.bind(main),
   });
 
-  const listener = new ApplicationResponceStub(
-    (id, detail) => {
-      handleOnError(id, detail);
-    },
-    (id, phase, testId, stdout, stderr, code) => {
-      handleOnComplete(id, phase, testId, stdout, stderr, code);
-    }
-  );
-
-  const receiver = new ApplicationResponceReceiver(listener);
+  const receiver = new ApplicationResponceReceiver(new ApplicationResponceWrapper(main));
   VscodeMessager.addMessageListener((data) => receiver.receive(data));
 });
