@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import { HTMLResourceView } from './view/HTMLResourceView';
-import { ViewViewProvider } from './view/ViewViewProvider';
+// import { ViewViewProvider } from './view/ViewViewProvider';
 import * as _FS from 'fs';
 import { RunnerManager } from './lib/RunnerManager';
 import { EnvironmentContext } from './lib/EnvironmentContext';
@@ -38,9 +38,9 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.showErrorMessage('internal error: ' + msg.toString());
     console.error(msg, err);
   });
-  const vvp = new ViewViewProvider(view);
+  // const vvp = new ViewViewProvider(view);
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider('vsstdio.commandPanelView', vvp)
+    vscode.window.registerWebviewViewProvider('vsstdio.commandPanelView', view.getWebviewViewProvider())
   );
 }
 
