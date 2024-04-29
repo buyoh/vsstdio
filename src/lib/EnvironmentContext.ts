@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 export class EnvironmentContext {
   constructor() {}
 
-  getWorkspace() {
+  getWorkspace(): string | undefined {
     if (!vscode.workspace.workspaceFolders) {
       return undefined;
     }

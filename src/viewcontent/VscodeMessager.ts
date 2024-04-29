@@ -1,3 +1,4 @@
+// vscode 関係のAPIを使うためのユーティリティ
 export namespace VscodeMessager {
   let gVscode = undefined as any;
 

@@ -1,3 +1,4 @@
+// HTML の要素を操作する関数を提供するモジュール
 export namespace DocumentElement {
   interface ButtonEventHandler {
     runBuildTest: () => void;
