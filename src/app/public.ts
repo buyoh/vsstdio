@@ -1,3 +1,4 @@
+import { ApplicationQuery, ApplicationResponce } from "../common/Command";
 
 export interface ViewContentService {
   getViewContentHandler(): ViewContentHandler;
@@ -10,11 +11,10 @@ export interface BackendService {
 }
 
 export interface ViewContentHandler {
-  // TODO: replace to meanful APIs
-  postMessage(a: any): void;
+  // TODO: この API を使うのは Backend ではなく main でやったほうが良さげ
+  bindApplication(query: ApplicationQuery): ApplicationResponce;
 }
 
 export interface BackendHandler {
-  // TODO: replace to meanful APIs such as processRun, processKill
-  processMessage(a: any): void;
+  //
 }

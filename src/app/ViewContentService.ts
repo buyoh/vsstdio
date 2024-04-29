@@ -8,12 +8,20 @@ import {
   ViewContentHandler,
   ViewContentService,
 } from './public';
+import {
+  ApplicationQuery,
+  ApplicationResponce,
+  ApplicationQueryReceiver,
+  ApplicationResponceTransmitter,
+} from '../common/Command';
 
 // ------------------------------------
 
 class ViewContentServiceImpl implements ViewContentService, ViewContentHandler {
   private htmlResourceView: HTMLResourceView;
   private backendHandler?: BackendHandler;
+
+  private applicationQueryReceiver?: ApplicationQueryReceiver;
 
   constructor(html: string) {
     this.htmlResourceView = new HTMLResourceView(
@@ -33,8 +41,14 @@ class ViewContentServiceImpl implements ViewContentService, ViewContentHandler {
   }
 
   // ViewContentHandler
-  postMessage(a: any): void {
-    this.htmlResourceView.postMessage(a);
+  bindApplication(query: ApplicationQuery): ApplicationResponce {
+    const applicationQueryReceiver = new ApplicationQueryReceiver(query);
+    const applicationResponceTransmitter = new ApplicationResponceTransmitter(
+      this.postMessage.bind(this)
+    );
+
+    this.applicationQueryReceiver = applicationQueryReceiver;
+    return applicationResponceTransmitter;
   }
 
   getWebviewViewProvider(): vscode.WebviewViewProvider {
@@ -43,11 +57,15 @@ class ViewContentServiceImpl implements ViewContentService, ViewContentHandler {
 
   private processMessage(query: any) {
     // console.log('RX', query);
-    if (!this.backendHandler) {
+    if (!this.applicationQueryReceiver) {
       // vscode.window.showErrorMessage('internal error: backend handler is not set');
       return;
     }
-    this.backendHandler.processMessage(query);
+    this.applicationQueryReceiver.receive(query);
+  }
+
+  private postMessage(a: any): void {
+    this.htmlResourceView.postMessage(a);
   }
 }
 

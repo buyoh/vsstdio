@@ -1,31 +1,35 @@
 import * as vscode from 'vscode';
 
 import { RunnerManager } from '../lib/RunnerManager';
-import {
-  CommandQuery,
-  CommandQueryKill,
-  CommandQueryRun,
-  CommandResponce,
-} from '../common/Command';
 import { BackendHandler, BackendService, ViewContentHandler } from './public';
 import { EnvironmentContext } from '../lib/EnvironmentContext';
+import { ApplicationQuery, ApplicationResponce } from '../common/Command';
 
 class Task {
-  private query_: CommandQueryRun;
+  // TODO: remove _.
+  private queryId_: string;
+  private queryBuild_: { cmd: string } | null;
+  private queryTests_: Array<{ testId: string; cmd: string; stdin: string }>;
+
   private runnerManager_: RunnerManager;
-  private sendResultHandler_: (r: CommandResponce) => void;
+  private applicationResponce_: ApplicationResponce;
   private internalErrorHandler_: ErrorHandler;
   private runnerId_: number | null;
   private killed_: boolean;
   constructor(
-    query: CommandQueryRun,
+    queryId: string,
+    queryBuild: { cmd: string } | null,
+    queryTests: Array<{ testId: string; cmd: string; stdin: string }>,
     runnerManager: RunnerManager,
-    sendResultHandler: (r: CommandResponce) => void,
+    applicationResponce: ApplicationResponce,
     internalErrorHandler: ErrorHandler
   ) {
-    this.query_ = query;
+    this.queryId_ = queryId;
+    this.queryBuild_ = queryBuild;
+    this.queryTests_ = queryTests;
+
     this.runnerManager_ = runnerManager;
-    this.sendResultHandler_ = sendResultHandler;
+    this.applicationResponce_ = applicationResponce;
     this.internalErrorHandler_ = internalErrorHandler;
     this.runnerId_ = null;
     this.killed_ = false;
@@ -63,36 +67,34 @@ class Task {
 
   async start(): Promise<boolean> {
     this.killed_ = false;
-    const buildQuery = this.query_.build;
+    const buildQuery = this.queryBuild_;
     if (buildQuery) {
       const resBuild = await this.runCommand(buildQuery.cmd, '');
-      this.sendResultHandler_({
-        result: 'complete',
-        id: this.query_.id,
-        phase: 'build',
-        testId: '-1',
-        stdout: resBuild.stdout,
-        stderr: resBuild.stderr,
-        code: resBuild.code,
-      });
+      this.applicationResponce_.complete(
+        this.queryId_,
+        'build',
+        '-1',
+        resBuild.stdout,
+        resBuild.stderr,
+        resBuild.code
+      );
       if (resBuild.code !== 0) {
         return false; // quit
       }
     }
-    for (const test of this.query_.tests) {
+    for (const test of this.queryTests_) {
       if (this.killed_) {
         break;
       }
       const resBuild = await this.runCommand(test.cmd, test.stdin);
-      this.sendResultHandler_({
-        result: 'complete',
-        id: this.query_.id,
-        phase: 'tests',
-        testId: test.testId,
-        stdout: resBuild.stdout,
-        stderr: resBuild.stderr,
-        code: resBuild.code,
-      });
+      this.applicationResponce_.complete(
+        this.queryId_,
+        'tests',
+        test.testId,
+        resBuild.stdout,
+        resBuild.stderr,
+        resBuild.code
+      );
     }
     return true;
   }
@@ -107,12 +109,13 @@ class Task {
 
 type ErrorHandler = (err: any, message: string) => void;
 
-class BackendServiceImpl implements BackendService, BackendHandler {
+class BackendServiceImpl implements BackendService, BackendHandler, ApplicationQuery {
   // TODO: remove _.
   private runnerManager_: RunnerManager;
   private internalErrorHandler_: ErrorHandler;
   private tasks_: { [key: string]: Task };
   private viewContentHandler?: ViewContentHandler;
+  private applicationResponce_?: ApplicationResponce;
 
   constructor(
     runnerManager: RunnerManager,
@@ -131,32 +134,30 @@ class BackendServiceImpl implements BackendService, BackendHandler {
   // BackendService
   setViewContentHandler(handler: ViewContentHandler): void {
     this.viewContentHandler = handler;
+    // TODO: ここでやる？
+    this.applicationResponce_ = this.viewContentHandler.bindApplication(this);
   }
 
-  private sendMessageImpl(a: CommandResponce) {
-    // console.log('TX', JSON.stringify(a));
-    this.viewContentHandler?.postMessage(a);
-  }
-
-  // BackendHandler
-  processMessage(query: CommandQuery) {
-    // console.log('RX', query);
-    if (query.method === 'run') {
-      this.processRun(query);
-    } else if (query.method === 'kill') {
-      this.processKill(query);
+  // ApplicationQuery
+  run(
+    id: string,
+    build: { cmd: string } | null,
+    tests: Array<{ testId: string; cmd: string; stdin: string }>
+  ): void {
+    if (!this.applicationResponce_) {
+      this.internalErrorHandler_(undefined, 'run: not binded');
+      return;
     }
-  }
-
-  private processRun(query: CommandQueryRun) {
     const task = new Task(
-      query,
+      id,
+      build,
+      tests,
       this.runnerManager_,
-      (r) => this.sendMessageImpl(r),
+      this.applicationResponce_,
       this.internalErrorHandler_
     );
 
-    const queryId = query.id.toString();
+    const queryId = id.toString();
     if (this.tasks_[queryId]) {
       this.internalErrorHandler_(undefined, 'run: invalid query parameters');
     }
@@ -170,16 +171,17 @@ class BackendServiceImpl implements BackendService, BackendHandler {
         delete this.tasks_[queryId];
       })
       .catch((e) => {
-        this.sendMessageImpl({
-          result: 'error',
-          id: query.id,
-          detail: e,
-        });
+        this.applicationResponce_?.error(id, e);
       });
   }
-  private processKill(query: CommandQueryKill) {
-    const queryId = query.id.toString();
+
+  // ApplicationQuery
+  kill(
+    id: string
+  ): void {
+    const queryId = id.toString();
     this.tasks_[queryId]?.kill();
+    delete this.tasks_[queryId];
   }
 }
 
