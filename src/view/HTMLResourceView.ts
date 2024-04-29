@@ -1,27 +1,20 @@
 import * as vscode from 'vscode';
-import { ViewInterface } from '../common/ViewInterface';
 
 // TODO: Remove ViewInterface
-export class HTMLResourceView implements ViewInterface, vscode.WebviewViewProvider {
+export class HTMLResourceView implements vscode.WebviewViewProvider {
   private html_: string = '';
   private postMessageHandler_?: (a: any) => void;
-  private receiveMessageHandler_?: (a: any) => void;
+  private receiveMessageHandler_: (a: any) => void;
 
-  constructor(html: string) {
+  constructor(html: string, receiveMessageHandler: (a: any) => void) {
     this.html_ = html;
+    this.receiveMessageHandler_ = receiveMessageHandler;
   }
 
   getWebviewViewProvider(): vscode.WebviewViewProvider {
     return this;
   }
 
-  // override: ViewInterface
-  // TODO: Remove this, and add args into ctor regarding handler.
-  onReceiveMessage(handler: (a: any) => void) {
-    this.receiveMessageHandler_ = handler;
-  }
-
-  // override: ViewInterface
   postMessage(a: any): void {
     this.postMessageHandler_?.(a);
   }

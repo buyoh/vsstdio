@@ -1,3 +1,5 @@
+import * as vscode from 'vscode';
+
 import { RunnerManager } from '../lib/RunnerManager';
 import {
   CommandQuery,
@@ -5,7 +7,8 @@ import {
   CommandQueryRun,
   CommandResponce,
 } from '../common/Command';
-import { ViewInterface } from '../common/ViewInterface';
+import { BackendHandler, BackendService, ViewContentHandler } from './public';
+import { EnvironmentContext } from '../lib/EnvironmentContext';
 
 class Task {
   private query_: CommandQueryRun;
@@ -104,28 +107,38 @@ class Task {
 
 type ErrorHandler = (err: any, message: string) => void;
 
-export class BackendService {
-  private view_: ViewInterface;
+class BackendServiceImpl implements BackendService, BackendHandler {
+  // TODO: remove _.
   private runnerManager_: RunnerManager;
   private internalErrorHandler_: ErrorHandler;
   private tasks_: { [key: string]: Task };
+  private viewContentHandler?: ViewContentHandler;
+
   constructor(
-    view: ViewInterface,
     runnerManager: RunnerManager,
     internalErrorHandler: ErrorHandler
   ) {
-    this.view_ = view;
     this.runnerManager_ = runnerManager;
     this.internalErrorHandler_ = internalErrorHandler;
     this.tasks_ = {};
-    view.onReceiveMessage(this.processMessage.bind(this));
+  }
+
+  // BackendService
+  getBackendHandler(): BackendHandler {
+    return this;
+  }
+
+  // BackendService
+  setViewContentHandler(handler: ViewContentHandler): void {
+    this.viewContentHandler = handler;
   }
 
   private sendMessageImpl(a: CommandResponce) {
     // console.log('TX', JSON.stringify(a));
-    this.view_.postMessage(a);
+    this.viewContentHandler?.postMessage(a);
   }
 
+  // BackendHandler
   processMessage(query: CommandQuery) {
     // console.log('RX', query);
     if (query.method === 'run') {
@@ -139,7 +152,7 @@ export class BackendService {
     const task = new Task(
       query,
       this.runnerManager_,
-      (r) => this.view_.postMessage(r),
+      (r) => this.sendMessageImpl(r),
       this.internalErrorHandler_
     );
 
@@ -168,4 +181,18 @@ export class BackendService {
     const queryId = query.id.toString();
     this.tasks_[queryId]?.kill();
   }
+}
+
+export async function createBackendService(
+  context: vscode.ExtensionContext,
+  environmentContext: EnvironmentContext,
+) {
+  const runnerManager = new RunnerManager(environmentContext);
+
+  const errorHandler = (err: any, msg: any) => {
+    vscode.window.showErrorMessage('internal error: ' + msg.toString());
+    console.error(msg, err);
+  };
+
+  return new BackendServiceImpl(runnerManager, errorHandler);
 }

@@ -7,7 +7,8 @@ import { HTMLResourceView } from './view/HTMLResourceView';
 import * as _FS from 'fs';
 import { RunnerManager } from './lib/RunnerManager';
 import { EnvironmentContext } from './lib/EnvironmentContext';
-import { BackendService } from './app/BackendService';
+import { createBackendService } from './app/BackendService';
+import { createViewContentService } from './app/ViewContentService';
 const FS = _FS.promises;
 
 // this method is called when your extension is activated
@@ -32,16 +33,14 @@ export async function activate(context: vscode.ExtensionContext) {
     `<script>\n${js}\n</script>`
   );
 
-  const view = new HTMLResourceView(html);
-  const rm = new RunnerManager(new EnvironmentContext());
-  const cp = new BackendService(view, rm, (err, msg) => {
-    vscode.window.showErrorMessage('internal error: ' + msg.toString());
-    console.error(msg, err);
-  });
-  // const vvp = new ViewViewProvider(view);
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider('vsstdio.commandPanelView', view.getWebviewViewProvider())
-  );
+  const [backendService, viewContentService] = await Promise.all([
+    createBackendService(context, new EnvironmentContext()),
+    createViewContentService(context),
+  ]);
+
+  backendService.setViewContentHandler(viewContentService.getViewContentHandler());
+  viewContentService.setBackendHandler(backendService.getBackendHandler());
+
 }
 
 // this method is called when your extension is deactivated
