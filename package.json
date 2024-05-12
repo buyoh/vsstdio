@@ -3,8 +3,9 @@
   "displayName": "shell runner with stdio",
   "description": "",
   "icon": "resources/priv/icon.png",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "preview": true,
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/buyoh/vsstdio.git"
