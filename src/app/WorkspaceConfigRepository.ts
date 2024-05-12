@@ -3,8 +3,8 @@ import * as vscode from 'vscode';
 interface WorkspaceConfig {
   defaultValues: {  // TODO: rename
     commandPanel: {
-      buildCommand: string;
-      testCommand: string;
+      buildCommand: string[];
+      testCommand: string[];
     };
   }
 }
@@ -21,10 +21,9 @@ export interface WorkspaceConfigRepository {
 function collectConfigFromWorkspace() {
   const config = vscode.workspace.getConfiguration('vsstdio');
   return {
-    // TODO: multiple
     commandPanel: {
-      buildCommand: '' + config.get('commandPanel.buildCommand'),
-      testCommand: '' + config.get('commandPanel.runCommand'),
+      buildCommand: (config.get('commandPanel.buildCommand') || []) as string[],
+      testCommand: (config.get('commandPanel.runCommand') || []) as string[],
     },
   };
 }

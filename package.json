@@ -45,14 +45,14 @@
       "title": "vsstdio",
       "properties": {
         "vsstdio.commandPanel.buildCommand": {
-          "type": "string",
-          "default": "echo build",
-          "description": "The default command to build"
+          "type": "array",
+          "default": ["echo build", "bash .vscode/build.sh", "g++ -std=c++17 -o a.out -O2 src/main.cpp", "ruby -c src/main.rb"],
+          "description": "The default command set to build"
         },
         "vsstdio.commandPanel.runCommand": {
-          "type": "string",
-          "default": "echo run",
-          "description": "The default command to run"
+          "type": "array",
+          "default": ["echo run", "./a.out", "ruby src/main.rb"],
+          "description": "The default command set to run"
         }
       }
     }

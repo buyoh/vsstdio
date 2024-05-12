@@ -36,8 +36,8 @@
 
 export interface ViewContentConfig {
   commandPanel: {
-    buildCommand: string;
-    testCommand: string;
+    buildCommand: string[];
+    testCommand: string[];
   };
 }
 
