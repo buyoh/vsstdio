@@ -12,22 +12,46 @@ import {
   ApplicationQuery,
   ApplicationResponce,
   ApplicationQueryReceiver,
+  ApplicationRemote,
+  ApplicationRemoteReceiver,
   ApplicationResponceTransmitter,
+  ApplicationEventListenerTransmitter,
 } from '../common/Command';
+import { WorkspaceConfigRepository } from './WorkspaceConfigRepository';
 
 // ------------------------------------
 
-class ViewContentServiceImpl implements ViewContentService, ViewContentHandler {
+class ViewContentServiceImpl implements ViewContentService, ViewContentHandler, ApplicationRemote {
   private htmlResourceView: HTMLResourceView;
   private backendHandler?: BackendHandler;
+  private workspaceConfigRepository: WorkspaceConfigRepository;
+
+  private applicationRemoteReceiver: ApplicationRemoteReceiver;
+  private applicationEventListenerTransmitter: ApplicationEventListenerTransmitter;
 
   private applicationQueryReceiver?: ApplicationQueryReceiver;
 
-  constructor(html: string) {
+
+  constructor(
+    html: string,
+    workspaceConfigRepository: WorkspaceConfigRepository
+  ) {
     this.htmlResourceView = new HTMLResourceView(
       html,
       this.processMessage.bind(this)
     );
+
+    this.applicationEventListenerTransmitter =
+      new ApplicationEventListenerTransmitter((json) =>
+        this.postMessage({ type: 'ApplicationEventListener', json })
+      );
+    this.applicationRemoteReceiver = new ApplicationRemoteReceiver(this);
+  
+    this.workspaceConfigRepository = workspaceConfigRepository;
+
+    workspaceConfigRepository.addEventListenerDidChangeConfig(async () => {
+      this.requestViewContentConfig();
+    });
   }
 
   // ViewContentService
@@ -44,11 +68,22 @@ class ViewContentServiceImpl implements ViewContentService, ViewContentHandler {
   bindApplication(query: ApplicationQuery): ApplicationResponce {
     const applicationQueryReceiver = new ApplicationQueryReceiver(query);
     const applicationResponceTransmitter = new ApplicationResponceTransmitter(
-      this.postMessage.bind(this)
+      (json) => this.postMessage({ type: 'ApplicationResponce', json })
     );
 
     this.applicationQueryReceiver = applicationQueryReceiver;
     return applicationResponceTransmitter;
+  }
+
+  // ApplicationRemote
+  requestViewContentConfig(): void {
+    // Transfer the current configuration to the view
+    (async () => {
+      const config = await this.workspaceConfigRepository.getWorkspaceConfig();
+      this.applicationEventListenerTransmitter.onViewContentConfigChanged(
+        config.defaultValues
+      );
+    })();
   }
 
   getWebviewViewProvider(): vscode.WebviewViewProvider {
@@ -56,15 +91,21 @@ class ViewContentServiceImpl implements ViewContentService, ViewContentHandler {
   }
 
   private processMessage(query: any) {
+    // Receive a message from the view
     // console.log('RX', query);
-    if (!this.applicationQueryReceiver) {
-      // vscode.window.showErrorMessage('internal error: backend handler is not set');
-      return;
+    if (query.type === 'ApplicationQuery') {
+      if (!this.applicationQueryReceiver) {
+        // vscode.window.showErrorMessage('internal error: backend handler is not set');
+        return;
+      }
+      this.applicationQueryReceiver.receive(query.json);
+    } else if (query.type === 'ApplicationRemote') {
+      this.applicationRemoteReceiver.receive(query.json);
     }
-    this.applicationQueryReceiver.receive(query);
   }
 
   private postMessage(a: any): void {
+    console.log('TX', a);
     this.htmlResourceView.postMessage(a);
   }
 }
@@ -72,7 +113,8 @@ class ViewContentServiceImpl implements ViewContentService, ViewContentHandler {
 // ------------------------------------
 
 export async function createViewContentService(
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
+  workspaceConfigRepository: WorkspaceConfigRepository
 ) {
   const htmlOriginal = (
     await FS.readFile(
@@ -89,7 +131,7 @@ export async function createViewContentService(
     `<script>\n${js}\n</script>`
   );
 
-  const service = new ViewContentServiceImpl(html);
+  const service = new ViewContentServiceImpl(html, workspaceConfigRepository);
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(

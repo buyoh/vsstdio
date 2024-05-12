@@ -40,6 +40,21 @@
           "name": "shell runner"
         }
       ]
+    },
+    "configuration": {
+      "title": "vsstdio",
+      "properties": {
+        "vsstdio.commandPanel.buildCommand": {
+          "type": "string",
+          "default": "echo build",
+          "description": "The default command to build"
+        },
+        "vsstdio.commandPanel.runCommand": {
+          "type": "string",
+          "default": "echo run",
+          "description": "The default command to run"
+        }
+      }
     }
   },
   "scripts": {

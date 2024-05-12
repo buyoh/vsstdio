@@ -30,6 +30,16 @@ export namespace DocumentElement {
     return e.value || '';
   }
 
+  export function setDataList(commandPanel: { buildCommand: string, testCommand: string }): void {
+    const ebuild = document.getElementById('build-command-list') as HTMLDataListElement; // force unwrap null
+    const etest = document.getElementById('test-command-list') as HTMLDataListElement; // force unwrap null
+
+    ebuild.innerHTML = '';
+    ebuild.appendChild(new Option(commandPanel.buildCommand, commandPanel.buildCommand));
+    etest.innerHTML = '';
+    etest.appendChild(new Option(commandPanel.testCommand, commandPanel.testCommand));
+  }
+
   export function setBuildResultValue(
     code: string,
     out: string,

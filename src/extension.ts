@@ -9,6 +9,7 @@ import { RunnerManager } from './lib/RunnerManager';
 import { EnvironmentContext } from './lib/EnvironmentContext';
 import { createBackendService } from './app/BackendService';
 import { createViewContentService } from './app/ViewContentService';
+import { createWorkspaceConfigRepository } from './app/WorkspaceConfigRepository';
 const FS = _FS.promises;
 
 // this method is called when your extension is activated
@@ -33,9 +34,11 @@ export async function activate(context: vscode.ExtensionContext) {
     `<script>\n${js}\n</script>`
   );
 
+  const workspaceConfigRepository = await createWorkspaceConfigRepository();
+
   const [backendService, viewContentService] = await Promise.all([
     createBackendService(context, new EnvironmentContext()),
-    createViewContentService(context),
+    createViewContentService(context, workspaceConfigRepository),
   ]);
 
   backendService.setViewContentHandler(viewContentService.getViewContentHandler());

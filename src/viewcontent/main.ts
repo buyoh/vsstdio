@@ -2,6 +2,10 @@ import {
   ApplicationQueryTransmitter,
   ApplicationResponce,
   ApplicationResponceReceiver,
+  ViewContentConfig,
+  ApplicationEventListener,
+  ApplicationEventListenerReceiver,
+  ApplicationRemoteTransmitter,
 } from '../common/Command';
 import { DocumentElement } from './DocumentElement';
 import { VscodeMessager } from './VscodeMessager';
@@ -44,19 +48,35 @@ class ApplicationResponceWrapper implements ApplicationResponce {
   }
 }
 
+class ApplicationEventListenerWrapper implements ApplicationEventListener {
+  onViewContentConfigChanged(config: ViewContentConfig): void {
+    DocumentElement.setDataList(config.commandPanel);
+  }
+}
+
 // ------------------------------------
 
 class ViewContentMain {
   testIdGenerator: IdGenerator;
   aqt: ApplicationQueryTransmitter;
+  art: ApplicationRemoteTransmitter;
   currentTestId: string;
 
   constructor() {
     this.testIdGenerator = new IdGenerator();
     this.aqt = new ApplicationQueryTransmitter((json) =>
-      VscodeMessager.postMessage(json)
+      VscodeMessager.postMessage({type: 'ApplicationQuery', json})
     );
+    this.art = new ApplicationRemoteTransmitter((json) =>
+      VscodeMessager.postMessage({type: 'ApplicationRemote', json})
+    );
+
     this.currentTestId = 'none';
+  }
+
+  doneSetup() {
+    // Send request to backend for loading configuration
+    this.art.requestViewContentConfig();
   }
 
   // Button events
@@ -159,5 +179,14 @@ DocumentElement.start(() => {
   });
 
   const receiver = new ApplicationResponceReceiver(new ApplicationResponceWrapper(main));
-  VscodeMessager.addMessageListener((data) => receiver.receive(data));
+  const eventListener = new ApplicationEventListenerReceiver(new ApplicationEventListenerWrapper());
+  VscodeMessager.addMessageListener((data) => {
+    if (data.type === 'ApplicationResponce') {
+      receiver.receive(data.json);
+    } else if (data.type === 'ApplicationEventListener') {
+      eventListener.receive(data.json);
+    }
+  });
+
+  main.doneSetup();
 });

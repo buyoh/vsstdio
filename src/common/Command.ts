@@ -34,6 +34,13 @@
 
 // export type CommandResponce = CommandResponceError | CommandResponceComplete;
 
+export interface ViewContentConfig {
+  commandPanel: {
+    buildCommand: string;
+    testCommand: string;
+  };
+}
+
 // ------------------------------------
 
 export interface ApplicationQuery {
@@ -55,6 +62,15 @@ export interface ApplicationResponce {
     stderr: string,
     code: number
   ): void;
+}
+
+
+export interface ApplicationRemote {
+  requestViewContentConfig(): void;
+}
+
+export interface ApplicationEventListener {
+  onViewContentConfigChanged(config: ViewContentConfig): void;
 }
 
 // ------------------------------------
@@ -108,7 +124,9 @@ export class ApplicationResponceTransmitter implements ApplicationResponce {
   }
 
   error(id: string, detail: string): void {
-    this.receiver(JSON.stringify({ result: 'error', id, detail }));
+    this.receiver(
+      JSON.stringify({ m: 'error', args: { result: 'error', id, detail } })
+    );
   }
 
   complete(
@@ -121,13 +139,16 @@ export class ApplicationResponceTransmitter implements ApplicationResponce {
   ): void {
     this.receiver(
       JSON.stringify({
-        result: 'complete',
-        id,
-        phase,
-        testId,
-        stdout,
-        stderr,
-        code,
+        m: 'complete',
+        args: {
+          result: 'complete',
+          id,
+          phase,
+          testId,
+          stdout,
+          stderr,
+          code,
+        },
       })
     );
   }
@@ -142,19 +163,80 @@ export class ApplicationResponceReceiver {
 
   receive(json: string): void {
     const obj = JSON.parse(json);
-    if (obj.result === 'error') {
+    if (obj.m === 'error') {
       // TODO: validate
-      this.receiver.error(obj.id, obj.detail);
-    } else if (obj.result === 'complete') {
+      const args = obj.args;
+      this.receiver.error(args.id, args.detail);
+    } else if (obj.m === 'complete') {
       // TODO: validate
+      const args = obj.args;
       this.receiver.complete(
-        obj.id,
-        obj.phase,
-        obj.testId,
-        obj.stdout,
-        obj.stderr,
-        obj.code
+        args.id,
+        args.phase,
+        args.testId,
+        args.stdout,
+        args.stderr,
+        args.code
       );
+    }
+  }
+}
+
+// ------------------------------------
+
+export class ApplicationRemoteTransmitter implements ApplicationRemote {
+  transmitter: (json: string) => void;
+
+  constructor(transmitter: (json: string) => void) {
+    this.transmitter = transmitter;
+  }
+
+  requestViewContentConfig(): void {
+    this.transmitter(JSON.stringify({ m: 'requestViewContentConfig' }));
+  }
+
+}
+
+export class ApplicationRemoteReceiver {
+  receiver: ApplicationRemote;
+
+  constructor(receiver: ApplicationRemote) {
+    this.receiver = receiver;
+  }
+
+  receive(json: string): void {
+    const obj = JSON.parse(json);
+    if (obj.m === 'requestViewContentConfig') {
+      this.receiver.requestViewContentConfig();
+    }
+  }
+}
+
+// ------------------------------------
+
+export class ApplicationEventListenerTransmitter implements ApplicationEventListener {
+  receiver: (json: string) => void;
+
+  constructor(receiver: (json: string) => void) {
+    this.receiver = receiver;
+  }
+
+  onViewContentConfigChanged(config: ViewContentConfig): void {
+    this.receiver(JSON.stringify({ m: 'config', args: config }));
+  }
+}
+
+export class ApplicationEventListenerReceiver {
+  receiver: ApplicationEventListener;
+
+  constructor(receiver: ApplicationEventListener) {
+    this.receiver = receiver;
+  }
+
+  receive(json: string): void {
+    const obj = JSON.parse(json);
+    if (obj.m === 'config') {
+      this.receiver.onViewContentConfigChanged(obj.args);
     }
   }
 }
