@@ -14,4 +14,13 @@ export class EnvironmentContext {
     }
     return undefined;
   }
+
+  getFileNameOfActiveEditor(): string | null {
+    const document = vscode.window.activeTextEditor?.document;
+    if (!document || document.isUntitled || document.isClosed) {
+      return null;
+    }
+
+    return document.uri.fsPath;
+  }
 }

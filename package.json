@@ -47,12 +47,12 @@
         "vsstdio.commandPanel.buildCommand": {
           "type": "array",
           "default": ["echo build", "bash .vscode/build.sh", "g++ -std=c++17 -o a.out -O2 src/main.cpp", "ruby -c src/main.rb"],
-          "description": "The default command set to build"
+          "description": "The default command set to build. Some special environment variables are available. `VSSTDIO_ACTIVE_FILEPATH`: The file path of the opened document in the editor. The variable may be empty."
         },
         "vsstdio.commandPanel.runCommand": {
           "type": "array",
           "default": ["echo run", "./a.out", "ruby src/main.rb"],
-          "description": "The default command set to run"
+          "description": "The default command set to run. Some special environment variables are available. `VSSTDIO_ACTIVE_FILEPATH`: The file path of the opened document in the editor. The variable may be empty."
         }
       }
     }

@@ -45,9 +45,15 @@ export class CommandRunner {
     this.ps_ = null;
     return new Promise((resolve, reject) => {
       const dir = this.ctx_.getWorkspace();
+      const env = {
+        // The file path of the opened document in the editor. The variable may be empty.
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        VSSTDIO_ACTIVE_FILEPATH: this.ctx_.getFileNameOfActiveEditor() || '',
+      };
       const ps = ChildProcess.spawn(this.command_, this.args_, {
         shell: true,
         cwd: dir,
+        env
       });
       ps.stdin.write(this.stdin_);
       ps.stdin.end();
